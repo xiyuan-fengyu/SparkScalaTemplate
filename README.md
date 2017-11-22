@@ -14,6 +14,7 @@ windowns下面通过ipconfig来查看网卡信息；
 SparkUI: Bound SparkUI to 0.0.0.0, and started at http://192.168.1.66:4040  
 
 打包设置，基础依赖包（spark和hadoop环境中已有的包）全部删除，仅包含自己的代码和第三方包
+![打包设置](README/img/artifact_create.png)
 ![打包设置](README/img/artifacts.png)
 
 Spark Task Template For IDEA
