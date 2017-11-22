@@ -2,4 +2,5 @@
 /.idea/
 /out/
 /target/
+/src/main/resources/META-INF/
 /SparkScalaTemplate.iml
