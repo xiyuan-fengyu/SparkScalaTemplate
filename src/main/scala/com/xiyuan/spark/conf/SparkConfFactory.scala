@@ -21,9 +21,12 @@ object SparkConfFactory {
   private def findJarFromFile(file: File, buffer: ArrayBuffer[String]): Unit = {
     if (file.exists()) {
       if (file.isDirectory) {
-        Option(file.listFiles()).getOrElse(Array()).foreach(file => {
-          findJarFromFile(file, buffer)
-        })
+        val subs = file.listFiles()
+        if (subs != null) {
+          subs.foreach(file => {
+            findJarFromFile(file, buffer)
+          })
+        }
       }
       else if (file.getCanonicalPath.endsWith(".jar")) {
         buffer += "file:/" + file.getCanonicalPath.replace('\\', '/')
