@@ -12,7 +12,7 @@ object LongestLine {
     val conf = SparkConfFactory.fromSparkProperties().setAppName(LongestLine.getClass.getSimpleName)
 
     val context = new SparkContext(conf)
-    val logFile = context.textFile("hdfs://192.168.1.120:9000/spark-root-org.apache.spark.deploy.master.Master-1-node120.out")
+    val logFile = context.textFile("hdfs://192.168.1.120:9000/test.txt")
     val longestLine = logFile.map(line => (line, line.length)).max()(Ordering.by(_._2))
     println(longestLine)
 
