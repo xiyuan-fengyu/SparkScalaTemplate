@@ -48,6 +48,12 @@
             <artifactId>spark-streaming_${scalaVersionPrefix}</artifactId>
             <version>${sparkVersion}</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.apache.spark/spark-streaming-kafka-0-10 -->
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-kafka-0-10_${scalaVersionPrefix}</artifactId>
+            <version>${sparkVersion}</version>
+        </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scalaVersionPrefix}</artifactId>

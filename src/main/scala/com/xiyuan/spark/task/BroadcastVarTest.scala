@@ -9,9 +9,9 @@ import org.apache.spark.SparkContext
 object BroadcastVarTest {
 
   def main(args: Array[String]) {
-    val conf = SparkConfFactory.fromSparkProperties().setAppName(BroadcastVarTest.getClass.getSimpleName)
-
+    val conf = SparkConfFactory.fromProperties().setAppName(BroadcastVarTest.getClass.getSimpleName)
     val context = new SparkContext(conf)
+
     val broadcastVar = context.broadcast(Set("one", "two", "three"))
     val rdd = context.parallelize(Array("one", "two", "three", "four"))
     rdd.filter(broadcastVar.value.contains(_)).collect().foreach(println)

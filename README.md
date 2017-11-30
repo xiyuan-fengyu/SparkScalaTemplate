@@ -13,9 +13,14 @@ windowns下面通过ipconfig来查看网卡信息；
 如果SparkUI采用的ip地址和spark集群在同一个网段，就ok  
 SparkUI: Bound SparkUI to 0.0.0.0, and started at http://192.168.1.66:4040  
 
-打包设置，基础依赖包（spark和hadoop环境中已有的包）全部删除，仅包含自己的代码和第三方包
+如果遇到下面的警告，可能是还有其他spark任务正在执行，而且占用了所有的core，导致新建的任务没有资源可以使用  
+可以到 http://YOUR_SPARK_MASTER_IP:8080 页面中停止旧的任务（如果可以的话）  
+Initial job has not accepted any resources; check your cluster UI to ensure that workers are registered and have sufficient resources
+
+打包设置，基础依赖包（spark和hadoop环境中已有的包）全部删除，仅包含自己的代码和第三方包    
 ![打包设置](README/img/artifact_create.png)
 ![打包设置](README/img/artifacts.png)
+![打包设置](README/img/sparkStreamKafka.png)
 
 Spark Task Template For IDEA
 ```scala

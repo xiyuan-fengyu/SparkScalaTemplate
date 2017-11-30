@@ -19,9 +19,9 @@ object SerializableErrorTest2 {
   }
 
   def main(args: Array[String]) {
-    val conf = SparkConfFactory.fromSparkProperties().setAppName(SerializableErrorTest1.getClass.getSimpleName)
-
+    val conf = SparkConfFactory.fromProperties().setAppName(SerializableErrorTest1.getClass.getSimpleName)
     val context = new SparkContext(conf)
+
     val matcher = new Matcher("\\d+")
     context.parallelize(Array("123", "abc", "4", "5")).filter(matcher.isMatch).collect().foreach(println)
 

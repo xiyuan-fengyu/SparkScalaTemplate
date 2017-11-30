@@ -34,7 +34,7 @@ object SparkConfFactory {
     }
   }
 
-  def fromSparkProperties(resource: String = "properties/spark.properties"): SparkConf = {
+  def fromProperties(resource: String = "properties/spark.properties"): SparkConf = {
     val sparkConf = new SparkConf()
     val in = SparkConfFactory.getClass.getClassLoader.getResourceAsStream(resource)
     if (in != null) {

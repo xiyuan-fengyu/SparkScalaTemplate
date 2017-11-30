@@ -36,9 +36,9 @@ object AccumulatorTest {
   }
 
   def main(args: Array[String]) {
-    val conf = SparkConfFactory.fromSparkProperties().setAppName(AccumulatorTest.getClass.getSimpleName)
-
+    val conf = SparkConfFactory.fromProperties().setAppName(AccumulatorTest.getClass.getSimpleName)
     val context = new SparkContext(conf)
+
     val acc = context.longAccumulator("myAcc")
     context.parallelize(Array(1, 2, 3, 4, 5)).foreach(acc.add(_))
     println(acc.value)
