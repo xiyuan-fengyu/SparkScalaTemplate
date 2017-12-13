@@ -56,6 +56,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-flume_${scalaVersionPrefix}</artifactId>
+            <version>${sparkVersion}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
             <artifactId>spark-sql_${scalaVersionPrefix}</artifactId>
             <version>${sparkVersion}</version>
         </dependency>
