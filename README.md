@@ -19,8 +19,12 @@ Initial job has not accepted any resources; check your cluster UI to ensure that
 
 打包设置，基础依赖包（spark和hadoop环境中已有的包）全部删除，仅包含自己的代码和第三方包    
 ![打包设置](README/img/artifact_create.png)
+
 ![打包设置](README/img/artifacts.png)
+
 ![打包设置](README/img/sparkStreamKafka.png)
+
+![打包设置](README/img/sparkStreamingFlume.png)
 
 Spark Task Template For IDEA
 ```scala
