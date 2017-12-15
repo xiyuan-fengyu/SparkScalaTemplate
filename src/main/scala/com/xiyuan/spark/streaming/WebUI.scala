@@ -4,7 +4,7 @@ import java.io.File
 import java.net.URI
 import java.nio.charset.StandardCharsets
 
-import com.google.gson.{JsonElement, JsonObject, JsonParser}
+import com.google.gson.{GsonBuilder, JsonElement, JsonParser}
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
 import io.netty.channel.nio.NioEventLoopGroup
@@ -58,16 +58,21 @@ class WebUI(port: Int) {
     workerGroup.shutdownGracefully()
   }
 
-  def broadcast(msg: JsonObject): Unit = {
-    try {
-      val msgFrame = new TextWebSocketFrame(msg.toString)
-      WebsocketHandler.handshakers.foreach(item => {
-        item._1.channel().writeAndFlush(msgFrame)
-      })
-    }
-    catch {
-      case e: Exception =>
-        e.printStackTrace()
+  private val gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create()
+
+  def broadcast(msg: AnyRef): Unit = {
+    if (msg != null) {
+      try {
+        val msgJson = if (msg.isInstanceOf[JsonElement]) msg else gson.toJson(msg)
+        val msgFrame = new TextWebSocketFrame(msgJson.toString)
+        WebsocketHandler.handshakers.foreach(item => {
+          item._1.channel().writeAndFlush(msgFrame)
+        })
+      }
+      catch {
+        case e: Exception =>
+          e.printStackTrace()
+      }
     }
   }
 
