@@ -3,7 +3,10 @@ package com.xiyuan.spark.streaming
 import java.io.File
 import java.net.URI
 import java.nio.charset.StandardCharsets
+import java.text.SimpleDateFormat
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.google.gson.{GsonBuilder, JsonElement, JsonParser}
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
@@ -26,6 +29,8 @@ class WebUI(port: Int) {
   private val logger = LoggerFactory.getLogger(classOf[WebUI])
 
   private var running = false
+
+  private val requestListener: Some[RequestListener] = None[RequestListener]
 
   private val (bossGroup, workerGroup) =
   {
@@ -58,15 +63,17 @@ class WebUI(port: Int) {
     workerGroup.shutdownGracefully()
   }
 
-  private val gson = new GsonBuilder().setDateFormat("yyyy-MM-dd HH:mm:ss").create()
+  val objectMapper = new ObjectMapper()
+  objectMapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"))
+  objectMapper.registerModule(DefaultScalaModule)
 
   def broadcast(msg: AnyRef): Unit = {
     if (msg != null) {
       try {
-        val msgJson = if (msg.isInstanceOf[JsonElement]) msg else gson.toJson(msg)
+        val msgJson = if (msg.isInstanceOf[JsonElement]) msg else objectMapper.writeValueAsString(msg)
         val msgFrame = new TextWebSocketFrame(msgJson.toString)
         WebsocketHandler.handshakers.foreach(item => {
-          item._1.channel().writeAndFlush(msgFrame)
+          item._1.channel().writeAndFlush(msgFrame.retain())
         })
       }
       catch {
@@ -123,7 +130,20 @@ class WebUI(port: Int) {
           handshakers(ctx).close(ctx.channel, frame1.retain)
           handshakers.remove(ctx)
         }
-        case _ =>
+        case text: TextWebSocketFrame =>
+          if (requestListener.isDefined) {
+            try {
+              val req = objectMapper.readValue(text.text(), classOf[mutable.HashMap[String, AnyRef]])
+              val res = requestListener.get.onRequest(req)
+              if (res.isDefined) {
+                ctx.channel().writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(res.get)))
+              }
+            }
+            catch {
+              case e: Exception =>
+                e.printStackTrace()
+            }
+          }
       }
 
     }
@@ -247,5 +267,11 @@ class WebUI(port: Int) {
     }
 
   }// HttpHandler END
+
+  trait RequestListener {
+
+    def onRequest(request: mutable.HashMap[String, AnyRef]): Some[mutable.HashMap[String, AnyRef]]
+
+  }
 
 }
