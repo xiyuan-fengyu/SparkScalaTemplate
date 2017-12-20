@@ -7,7 +7,7 @@ import java.text.SimpleDateFormat
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
-import com.google.gson.{GsonBuilder, JsonElement, JsonParser}
+import com.google.gson.{JsonElement, JsonParser}
 import io.netty.bootstrap.ServerBootstrap
 import io.netty.buffer.Unpooled
 import io.netty.channel.nio.NioEventLoopGroup
@@ -30,10 +30,10 @@ class WebUI(port: Int) {
 
   private var running = false
 
-  private var requestListener: Some[RequestListener] = None[RequestListener]
+  private var requestListener: mutable.HashMap[String, AnyRef] => mutable.HashMap[String, AnyRef] = _
 
-  def setRequestListener(listener: RequestListener): Unit = {
-    requestListener = Some(listener)
+  def setRequestListener(listener: mutable.HashMap[String, AnyRef] => mutable.HashMap[String, AnyRef]): Unit = {
+    requestListener = listener
   }
 
   private val (bossGroup, workerGroup) =
@@ -135,12 +135,12 @@ class WebUI(port: Int) {
           handshakers.remove(ctx)
         }
         case text: TextWebSocketFrame =>
-          if (requestListener.isDefined) {
+          if (requestListener != null) {
             try {
               val req = objectMapper.readValue(text.text(), classOf[mutable.HashMap[String, AnyRef]])
-              val res = requestListener.get.onRequest(req)
-              if (res.isDefined) {
-                ctx.channel().writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(res.get)))
+              val res = requestListener(req)
+              if (res != null) {
+                ctx.channel().writeAndFlush(new TextWebSocketFrame(objectMapper.writeValueAsString(res)))
               }
             }
             catch {
@@ -271,11 +271,5 @@ class WebUI(port: Int) {
     }
 
   }// HttpHandler END
-
-  trait RequestListener {
-
-    def onRequest(request: mutable.HashMap[String, AnyRef]): Some[mutable.HashMap[String, AnyRef]]
-
-  }
 
 }

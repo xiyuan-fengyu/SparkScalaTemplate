@@ -1,27 +1,21 @@
 (function () {
 
+    let curData = {
+        ipCounts: null,
+        agentKeyWords: null
+    };
+
     $(document).ready(function () {
         let lastRefreshTime = new Date().getTime();
 
         let ws = startWebSocket("ws://" + location.host);
         ws.addListener("dataPush", res => {
-            if (!res.data.length) return;
+            if (!res.data || !res.data.ipCounts) return;
+
+            curData = res.data;
+            computeAgentKeyWords();
 
             let i = 0;
-            let now = new Date().getTime();
-            let lastestTime = res.data.map(item => item._2._2).reduce((item1, item2) => item1 > item2 ? item1 : item2);
-            let dataDelay = now - moment(lastestTime, "YYYY_MM_DD__HH_mm_ss_SSS").toDate().getTime();
-            let refreshDelta = now - lastRefreshTime;
-            lastRefreshTime = now;
-            let lastTimeHtml = `
-            <div class="row" style="margin-top: 24px; text-align: right;">
-                <p>Last Refresh Time: ${moment().format("YYYY_MM_DD__HH_mm_ss_SSS")}</p>
-                <p>Lastest Time Of Data: ${lastestTime}</p>
-                <p>Data Delay: ${parseInt(dataDelay / 1000)} 秒 ${dataDelay % 1000} 毫秒</p>
-                <p>Refresh Delta: ${parseInt(refreshDelta / 1000)} 秒 ${refreshDelta % 1000} 毫秒</p>  
-            </div>
-            `;
-
             let tableHtml = `
              <table class="table table-hover">
               <thead>
@@ -29,23 +23,76 @@
                   <th>#</th>
                   <th>Ip</th>
                   <th>Count</th>
-                  <th>Last Time</th>
+                  <th>Agent Key Words</th>
                 </tr>
               </thead>
               <tbody>
-                ${res.data.map(item => `
-                <tr>
+                ${res.data.ipCounts.filter(item => item[1][0] >= 10).map(item => `
+                <tr class="ipCountsItem" data-index="${i}">
                   <th scope="row">${i++}</th>
-                  <td>${item._1}</td>
-                  <td>${item._2._1}</td>
-                  <td>${item._2._2}</td>
+                  <td>${item[0]}</td>
+                  <td>${item[1][0]}</td>
+                  <td>${item[1][2].map(keyWord => `
+                    <label>${keyWord}</label>
+                  `)}</td>
                 </tr>`).join("\n")}
               </tbody>
             </table>
             `;
-            $("div.container").html(lastTimeHtml + tableHtml);
+            $("#ipCounts").html(tableHtml);
+
+            $(".ipCountsItem").click(function () {
+                showAgent(parseInt($(this).attr("data-index")))
+            });
         })
     });
+
+    function computeAgentKeyWords() {
+        if (!curData || !curData.ipCounts) return;
+
+        //agent关键字词频统计
+        curData.agentKeyWords = {};
+        curData.ipCounts.forEach(ipCount => {
+            let agents = ipCount[1][1];
+            let agentKeyWords = {};
+            agents.forEach(agent => {
+                let split = agent.split(/[ /,;()]/);
+                split.forEach(item => {
+                    if (item.length > 0 && !item.match(/[0-9._-]+/)) {
+                        item = item.toLowerCase();
+                        curData.agentKeyWords[item] = (curData.agentKeyWords[item] || 0) + 1;
+                        agentKeyWords[item] = true;
+                    }
+                });
+            });
+            ipCount[1].push([]);
+            Object.keys(agentKeyWords).forEach(keyWord => ipCount[1][2].push(keyWord));
+        });
+
+        //agent关键字按词频排序
+        curData.ipCounts.forEach(ipCount => {
+            ipCount[1][2] = ipCount[1][2].sort((item1, item2) => -(curData.agentKeyWords[item1] - curData.agentKeyWords[item2])).slice(0, 50);
+        });
+    }
+
+    function showAgent(index) {
+        if (curData && curData.ipCounts) {
+            let ipData = curData.ipCounts[index];
+            let title = `Agents of ${ipData[0]}`;
+            let agents = `
+            <ul class="list-group">
+              ${ipData[1][1].sort().map(item => `<li class="list-group-item">${item}</li>`).join("\n")}
+            </ul>
+            `;
+            showModal(title, agents);
+        }
+    }
+
+    function showModal(title, body) {
+        $("#myModalLabel").text(title);
+        $("#myModalBody").html(body);
+        $('#myModal').modal('show');
+    }
 
     function startWebSocket(address) {
         newInstance = new WebSocket(address);
@@ -72,6 +119,12 @@
         };
         newInstance.onopen = (event) => {
             newInstance.connected = true;
+
+            let tempQueue = newInstance.sendQueue;
+            newInstance.sendQueue = [];
+            for (let item of tempQueue) {
+                sendMessage(item.msg,  item.callback);
+            }
         };
         newInstance.onclose = (event) => {
             newInstance.connected = false;
@@ -80,11 +133,20 @@
             newInstance.close(1000);
         };
 
+        newInstance.sendQueue = [];
         newInstance.sendMessage = (msg, callback) => {
-            if (msg !== null && msg.key && newInstance !== null && newInstance.connected) {
+            if (msg !== null && msg.key && newInstance !== null) {
                 msg.id = new Date().getTime() + "_" + parseInt(Math.random() * 9000 + 1000);
-                newInstance.send(JSON.stringify(msg));
-                addListener(msg.id, callback);
+                if (newInstance.connected) {
+                    newInstance.send(JSON.stringify(msg));
+                    addListener(msg.id, callback);
+                }
+                else {
+                    newInstance.sendQueue.push({
+                        msg: msg,
+                        callback: callback
+                    });
+                }
             }
         };
 
