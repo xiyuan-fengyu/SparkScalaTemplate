@@ -30,7 +30,11 @@ class WebUI(port: Int) {
 
   private var running = false
 
-  private val requestListener: Some[RequestListener] = None[RequestListener]
+  private var requestListener: Some[RequestListener] = None[RequestListener]
+
+  def setRequestListener(listener: RequestListener): Unit = {
+    requestListener = Some(listener)
+  }
 
   private val (bossGroup, workerGroup) =
   {
